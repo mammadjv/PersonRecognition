@@ -3,3 +3,4 @@ devel
 libfreenect2
 *~
 *.idea
+dataset/
