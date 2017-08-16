@@ -3,6 +3,6 @@ devel
 libfreenect2
 *~
 *.idea
-PythonScripts/dataset/
+python_scripts/dataset/
 *.pyc
 *.avi
