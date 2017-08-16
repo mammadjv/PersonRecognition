@@ -4,3 +4,4 @@ libfreenect2
 *~
 *.idea
 PythonScripts/dataset/
+*.pyc
