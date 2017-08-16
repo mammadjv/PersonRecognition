@@ -11,7 +11,7 @@ class VideoCapture:
         if self.rgb_cap.isOpened() and self.depth_cap.isOpened():
             rgb_ret, rgb_frame = self.rgb_cap.read()
             depth_ret, depth_frame = self.depth_cap.read()
-            if rgb_ret == True and depth_ret == True:
+            if rgb_ret is True and depth_ret is True:
                 return True, rgb_frame, depth_frame
             else:
                 return False, None, None

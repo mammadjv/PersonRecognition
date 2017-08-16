@@ -5,14 +5,14 @@ import cv2
 
 class UserTracker:
     def __init__(self, rgb_video, depth_video, datafile):
-        self.videoCapture = videoCapture.VideoCapture(rgb_video, depth_video)
-        self.fileStreamer = fileStreamer.FileStreamer(datafile)
+        self.video_capture = video_capture.VideoCapture(rgb_video, depth_video)
+        self.file_streamer = file_streamer.FileStreamer(datafile)
         self.frame_existence = False
         self.rgb_frame = self.depth_frame = None
         self.users = []
 
     def frame_exist(self):
-        self.frame_existence, self.rgb_frame, self.depth_frame = self.videoCapture.read_frame()
+        self.frame_existence, self.rgb_frame, self.depth_frame = self.video_capture.read_frame()
         return self.frame_existence
 
     def get_rgb_frame(self):
