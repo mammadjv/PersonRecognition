@@ -1,6 +1,6 @@
 import pandas as pd
-import numpy as np
 import cv2
+import sys
 
 
 class FrameCreator:
@@ -8,9 +8,13 @@ class FrameCreator:
         self.data = datafile
         self.frames = []
 
+    def add_empty_frame(self):
+        self.frames.append(Frame(len(self.frames), 0))
+
     def parse(self):
         df = pd.read_csv(self.data, sep='\n', header=None, index_col=None)
-        last_frame_id = 1
+        last_frame_id = 0
+        self.frames.append(Frame(0, 0))
         for index in range(0, len(df)):
             line = df.iloc[index].values[0]
             if line.startswith('id'):
@@ -21,6 +25,7 @@ class FrameCreator:
                 frame_temp = Frame(frame_temp_id, frame_temp_number_of_persons)
                 for i in range(last_frame_id + 1, frame_temp_id):
                     self.frames.append(Frame(i, 0))
+                # sys.exit()
                 last_frame_id = frame_temp_id
                 for i in range(0, frame_temp_number_of_persons):
                     user_line = df.iloc[index + 1 + i].values[0].split(' ')
@@ -61,6 +66,16 @@ class Frame:
     def set_images(self, rgb_frame, depth_frame):
         self.rgb_frame = rgb_frame
         self.depth_frame = depth_frame
+
+    def get_rgb_frame(self):
+        return self.rgb_frame
+
+    def get_depth_frame(self):
+        return self.depth_frame
+
+    def get_frames(self):
+        return self.rgb_frame, self.depth_frame
+
 
 
 class Person:
@@ -103,8 +118,9 @@ class Joint:
         return self.z_world
 
 
-# EXAMPLE
-temp = FrameCreator(
-    "./dataset/data_2.txt")
-frames = temp.parse()
-frames_size = len(frames)
+# # EXAMPLE
+# temp = FrameCreator(
+#     "./dataset/data_2.txt")
+# frames = temp.parse()
+# frames_size = len(frames)
+# print frames_size
