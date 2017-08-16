@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import cv2
 
+
 class FrameCreator:
     def __init__(self, datafile):
         self.data = datafile
@@ -18,8 +19,8 @@ class FrameCreator:
                 frame_temp_id = int(line.split(' ')[0])
                 frame_temp_number_of_persons = int(line.split(' ')[1])
                 frame_temp = Frame(frame_temp_id, frame_temp_number_of_persons)
-                for i in range(last_frame_id,frame_temp_id):
-                    self.frames.append(Frame(i,0))
+                for i in range(last_frame_id + 1, frame_temp_id):
+                    self.frames.append(Frame(i, 0))
                 last_frame_id = frame_temp_id
                 for i in range(0, frame_temp_number_of_persons):
                     user_line = df.iloc[index + 1 + i].values[0].split(' ')
@@ -45,7 +46,8 @@ class Frame:
         self.frame_id = frame_id
         self.number_of_persons = number_of_persons
         self.persons = []
-        self.rgb_frame = self.depth_frame = None
+        self.rgb_frame = None
+        self.depth_frame = None
 
     def get_number_of_persons(self):
         return self.number_of_persons
@@ -100,9 +102,9 @@ class Joint:
     def get_z_world(self):
         return self.z_world
 
+
 # EXAMPLE
-temp = FrameCreator("/home/mohammad/Desktop/Parallels Shared Folders/Home/Documents/Learning/Robotics/Peroson Recognition/dataset/data_2.txt")
+temp = FrameCreator(
+    "./dataset/data_2.txt")
 frames = temp.parse()
 frames_size = len(frames)
-print frames[frames_size-1].get_persons()[0].get_joints()[0].get_y_image()
-print frames_size
