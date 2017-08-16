@@ -1,13 +1,15 @@
 import pandas as pd
+import numpy as np
+import cv2
 
-
-class FileStreamer:
+class FrameCreator:
     def __init__(self, datafile):
         self.data = datafile
+        self.frames = []
 
     def parse(self):
-        frames = []
         df = pd.read_csv(self.data, sep='\n', header=None, index_col=None)
+        last_frame_id = 1
         for index in range(0, len(df)):
             line = df.iloc[index].values[0]
             if line.startswith('id'):
@@ -16,6 +18,9 @@ class FileStreamer:
                 frame_temp_id = int(line.split(' ')[0])
                 frame_temp_number_of_persons = int(line.split(' ')[1])
                 frame_temp = Frame(frame_temp_id, frame_temp_number_of_persons)
+                for i in range(last_frame_id,frame_temp_id):
+                    self.frames.append(Frame(i,0))
+                last_frame_id = frame_temp_id
                 for i in range(0, frame_temp_number_of_persons):
                     user_line = df.iloc[index + 1 + i].values[0].split(' ')
                     joints = []
@@ -31,8 +36,8 @@ class FileStreamer:
                                             user_line[5 + j]))
                     person_temp = Person(user_id, joints)
                     frame_temp.persons.append(person_temp)
-                frames.append(frame_temp)
-        return frames
+                self.frames.append(frame_temp)
+        return self.frames
 
 
 class Frame:
@@ -40,6 +45,7 @@ class Frame:
         self.frame_id = frame_id
         self.number_of_persons = number_of_persons
         self.persons = []
+        self.rgb_frame = self.depth_frame = None
 
     def get_number_of_persons(self):
         return self.number_of_persons
@@ -49,6 +55,10 @@ class Frame:
 
     def get_frame_id(self):
         return self.frame_id
+
+    def set_images(self, rgb_frame, depth_frame):
+        self.rgb_frame = rgb_frame
+        self.depth_frame = depth_frame
 
 
 class Person:
@@ -91,6 +101,8 @@ class Joint:
         return self.z_world
 
 # EXAMPLE
-# temp = FileStreamer("./dataset/data_2.txt")
-# frames = temp.parse()
-# print type(frames[100].get_persons()[0].get_joints()[0].get_x_image())
+temp = FrameCreator("/home/mohammad/Desktop/Parallels Shared Folders/Home/Documents/Learning/Robotics/Peroson Recognition/dataset/data_2.txt")
+frames = temp.parse()
+frames_size = len(frames)
+print frames[frames_size-1].get_persons()[0].get_joints()[0].get_y_image()
+print frames_size

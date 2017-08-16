@@ -1,14 +1,13 @@
 import video_capture
-import file_streamer
+import frame_creator
 import cv2
 
 
 class UserTracker:
     def __init__(self, rgb_video, depth_video, datafile):
         self.video_capture = video_capture.VideoCapture(rgb_video, depth_video)
-        self.file_streamer = file_streamer.FileStreamer(datafile)
+        self.frame_creator = frame_creator.FrameCreator(datafile)
         self.frame_existence = False
-        self.rgb_frame = self.depth_frame = None
         self.users = []
 
     def frame_exist(self):
@@ -21,7 +20,7 @@ class UserTracker:
     def get_depth_frame(self):
         return self.depth_frame
 
-    def get_frames(self):
+    def get_frame(self):
         return self.rgb_frame, self.depth_frame
 
     def show_frames(self):
