@@ -1,6 +1,4 @@
 import pandas as pd
-import cv2
-import sys
 
 
 class FrameCreator:
@@ -77,7 +75,6 @@ class Frame:
         return self.rgb_frame, self.depth_frame
 
 
-
 class Person:
     def __init__(self, person_id, joints):
         self.person_id = person_id
@@ -116,7 +113,6 @@ class Joint:
 
     def get_z_world(self):
         return self.z_world
-
 
 # # EXAMPLE
 # temp = FrameCreator(

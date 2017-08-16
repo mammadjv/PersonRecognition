@@ -1,8 +1,8 @@
-import video_capture
-import frame_creator
 import cv2
-import sys
-import numpy as np
+
+import frame_creator
+import video_capture
+
 
 class UserTracker:
     def __init__(self, rgb_video, depth_video, datafile):
@@ -18,7 +18,7 @@ class UserTracker:
         self.frame_existence, rgb_frame, depth_frame = self.video_capture.read_frame()
 
         if self.frame_existence:
-            if self.current_frame_id > len(self.frame_creator.frames)-1:
+            if self.current_frame_id > len(self.frame_creator.frames) - 1:
                 self.frame_creator.add_empty_frame()
             self.frame_creator.frames[self.current_frame_id].set_images(rgb_frame, depth_frame)
         return self.frame_existence
@@ -27,7 +27,7 @@ class UserTracker:
         return frame_creator.frames[self.current_frame_id]
 
     def show_frames(self):
-        rgb_frame , depth_frame = self.frame_creator.frames[self.current_frame_id].get_frames()
+        rgb_frame, depth_frame = self.frame_creator.frames[self.current_frame_id].get_frames()
         cv2.imshow('rgb_frame', rgb_frame)
         cv2.imshow('depth_frame', depth_frame)
         cv2.waitKey(1)

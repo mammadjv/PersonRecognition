@@ -1,13 +1,10 @@
-import numpy as np
 import cv2
-import sys
 
 
 class VideoCapture:
     def __init__(self, rgb_video_file, depth_video_file):
         self.rgb_cap = cv2.VideoCapture(rgb_video_file)
         self.depth_cap = cv2.VideoCapture(depth_video_file)
-
 
     def read_frame(self):
         if self.rgb_cap.isOpened() and self.depth_cap.isOpened():
