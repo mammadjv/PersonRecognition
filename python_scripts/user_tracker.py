@@ -14,7 +14,7 @@ class UserTracker:
         self.frame_creator.parse()
 
     def frame_exist(self):
-        self.current_frame_id += 1
+        self.current_frame_id = self.current_frame_id + 1
         self.frame_existence, rgb_frame, depth_frame = self.video_capture.read_frame()
 
         if self.frame_existence:
