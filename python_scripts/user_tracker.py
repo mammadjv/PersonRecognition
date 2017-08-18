@@ -24,7 +24,7 @@ class UserTracker:
         return self.frame_existence
 
     def get_current_frame(self):
-        return frame_creator.frames[self.current_frame_id]
+        return self.frame_creator.frames[self.current_frame_id]
 
     def show_frames(self):
         rgb_frame, depth_frame = self.frame_creator.frames[self.current_frame_id].get_frames()
