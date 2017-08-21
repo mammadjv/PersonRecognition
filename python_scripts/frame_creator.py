@@ -86,6 +86,29 @@ class Person:
     def get_person_id(self):
         return self.person_id
 
+    def face_and_headjoints_exists_for_person(self):
+        shoulder_joints = []
+        head_joints = []
+        number_of_shoulders = 0
+        for joint in self.get_joints():
+            if joint.get_joint_name() == 'right_shoulder' \
+                    or joint.get_joint_name() == 'left_shoulder':
+                shoulder_joints.append(joint)
+                number_of_shoulders += 1
+            if joint.get_joint_name() == 'head' \
+                    or joint.get_joint_name() == 'neck':
+                head_joints.append(joint)
+
+        if len(shoulder_joints) != 2:
+            return False, []
+
+        left_shoulder, right_shoulder = shoulder_joints[0], shoulder_joints[1]
+
+        if left_shoulder.get_x_world > right_shoulder.get_x_world():
+            return False, []
+
+        return True, head_joints
+
 
 class Joint:
     def __init__(self, joint_name, y_image, x_image, x_world, y_world, z_world):

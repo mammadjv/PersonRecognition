@@ -21,16 +21,11 @@ class FaceDetector:
     def get_faces(self, frame):
         if frame.get_number_of_persons() == 0:
             return None
+
         ## init array of faces
         faces = []
         for person in frame.get_persons():
-            head_joints = []
-            for joint in person.get_joints():
-                if joint.get_joint_name() == 'head':
-                  head_joints.append(joint)
-                if joint.get_joint_name() == 'torso':
-                   head_joints.append(joint)
-                if len(head_joints) == 2:
-                   ## detect faces in image
-                   faces.append(self.crop_face(head_joints, frame.get_frames()))
-                   break
+            face_exists, head_joints = person.face_and_headjoints_exists_for_person()
+            if not face_exists:
+                pass
+            faces.append(self.crop_face(head_joints, frame.get_frames()))
