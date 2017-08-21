@@ -86,28 +86,36 @@ class Person:
     def get_person_id(self):
         return self.person_id
 
-    def face_and_headjoints_exists_for_person(self):
+    def face_and_head_joints_exists_for_person(self):
         shoulder_joints = []
         head_joints = []
-        number_of_shoulders = 0
         for joint in self.get_joints():
             if joint.get_joint_name() == 'right_shoulder' \
                     or joint.get_joint_name() == 'left_shoulder':
                 shoulder_joints.append(joint)
-                number_of_shoulders += 1
             if joint.get_joint_name() == 'head' \
                     or joint.get_joint_name() == 'neck':
                 head_joints.append(joint)
 
         if len(shoulder_joints) != 2:
-            return False, []
+            return False, [], []
 
         left_shoulder, right_shoulder = shoulder_joints[0], shoulder_joints[1]
 
-        if left_shoulder.get_x_world > right_shoulder.get_x_world():
-            return False, []
+        # print left_shoulder.get_x_image(), right_shoulder.get_x_image()
+        if left_shoulder.get_x_image() <= 0 or right_shoulder.get_x_image() <= 0\
+                or left_shoulder.get_x_image() >= 639 or right_shoulder.get_x_image() >= 639:
+            return False, [], []
+        if left_shoulder.get_y_image() <= 0 or right_shoulder.get_y_image() <= 0\
+                or left_shoulder.get_y_image() >= 479 or right_shoulder.get_y_image() >= 479:
+            return False, [], []
+        if left_shoulder.get_x_image() > right_shoulder.get_x_image():
+            return False, [], []
 
-        return True, head_joints
+        if len(head_joints) != 2:
+            return False, [], []
+        # print len(shoulder_joints), len(head_joints)
+        return True, head_joints, shoulder_joints
 
 
 class Joint:
