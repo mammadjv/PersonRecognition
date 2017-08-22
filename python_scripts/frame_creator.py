@@ -71,7 +71,7 @@ class Frame:
     def get_depth_frame(self):
         return self.depth_frame
 
-    def get_frames(self):
+    def get_images(self):
         return self.rgb_frame, self.depth_frame
 
 

@@ -27,7 +27,7 @@ class UserTracker:
         return self.frame_creator.frames[self.current_frame_id]
 
     def show_frames(self):
-        rgb_frame, depth_frame = self.frame_creator.frames[self.current_frame_id].get_frames()
+        rgb_frame, depth_frame = self.frame_creator.frames[self.current_frame_id].get_images()
         cv2.imshow('rgb_frame', rgb_frame)
         cv2.imshow('depth_frame', depth_frame)
         cv2.waitKey(1)

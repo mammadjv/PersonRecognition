@@ -5,10 +5,12 @@ import numpy as np
 
 class FaceDetector:
 
-    def __init__(self):
+    def __init__(self,user_name):
         print "Face Detector module created"
+        self.save_path = './train_dataset/'
+        self.user_name = user_name
 
-    def crop_face(self, head_joints, shoulder_joints, frames):
+    def crop_face(self, head_joints, shoulder_joints, frame):
         length_threshold = 10
         x_head, y_head = head_joints[0].get_x_image(), head_joints[0].get_y_image()
         x_neck, y_neck = head_joints[1].get_x_image(), head_joints[1].get_y_image()
@@ -24,12 +26,12 @@ class FaceDetector:
         y_head += 2*point_step_correction
         x_neck = x_head
 
-        rgb_frame, depth_frame = frames[0].copy(), frames[1].copy()
-        cv2.circle(rgb_frame, (x_head,y_head), 1, (0, 255, 0), 3)
-        cv2.circle(rgb_frame, (x_neck, y_neck), 1, (0, 255, 0), 3)
+        rgb_frame, depth_frame = frame.get_rgb_frame(), frame.get_depth_frame()
+        #cv2.circle(rgb_frame, (x_head,y_head), 1, (0, 255, 0), 3)
+        #cv2.circle(rgb_frame, (x_neck, y_neck), 1, (0, 255, 0), 3)
 
-        cv2.circle(rgb_frame, (x_left_shoulder, y_left_shoulder), 1, (255, 0, 0), 3)
-        cv2.circle(rgb_frame, (x_right_shoulder, y_right_shoulder), 1, (0, 0, 225), 3)
+        #cv2.circle(rgb_frame, (x_left_shoulder, y_left_shoulder), 1, (255, 0, 0), 3)
+        #cv2.circle(rgb_frame, (x_right_shoulder, y_right_shoulder), 1, (0, 0, 225), 3)
 
         radius = math.sqrt(math.fabs(math.pow(x_head - x_neck, 2) + math.pow(y_head - y_neck, 2)))
         print radius, x_head , y_head
@@ -40,12 +42,9 @@ class FaceDetector:
 
         print y_begin, y_end, x_begin, x_end
         rgb_croped = rgb_frame[y_begin:y_end, x_begin:x_end]
-        # print rgb_croped.shape[:2]
-        cv2.imshow('crop_rgb', rgb_croped)
-        cv2.waitKey(3)
         return rgb_croped
 
-    def get_faces(self, frame):
+    def get_faces(self, frame, save_face = False):
         if frame.get_number_of_persons() == 0:
             return None
         ## init array of faces
@@ -55,4 +54,9 @@ class FaceDetector:
             if not face_exists:
                 continue
             # print frame.get_frame_id()
-            faces.append(self.crop_face(head_joints, shoulder_joints, frame.get_frames()))
+            detected_face = self.crop_face(head_joints, shoulder_joints, frame)
+            if save_face:
+                save_path = self.save_path + self.user_name +str(frame.get_frame_id()) + '.jpg'
+                cv2.imwrite(save_path,detected_face)
+            cv2.waitKey(3)
+            faces.append(detected_face)
