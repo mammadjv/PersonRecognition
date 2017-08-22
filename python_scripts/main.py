@@ -3,9 +3,9 @@ import FaceDetector as fd
 import time as time
 
 
-user_tracker = ut.UserTracker("./dataset/rgb_2.avi",
-                              "./dataset/depth_2.avi",
-                              "./dataset/data_2.txt")
+user_tracker = ut.UserTracker("./dataset/rgb_mammad.avi",
+                              "./dataset/depth_mammad.avi",
+                              "./dataset/data_mammad.txt")
 face_detector = fd.FaceDetector()
 
 begining_time = 0
