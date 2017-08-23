@@ -111,10 +111,9 @@ class Person:
             return False, [], []
         if left_shoulder.get_x_image() > right_shoulder.get_x_image():
             return False, [], []
-
         if len(head_joints) != 2:
             return False, [], []
-        # print len(shoulder_joints), len(head_joints)
+
         return True, head_joints, shoulder_joints
 
 
