@@ -108,6 +108,10 @@ include_directories(${NITE2_DIR}/Include)
 add_executable(tracker src/tracker.cpp)
 target_link_libraries(tracker OpenNI2 ${NITE2_LIB} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
+
+add_executable(kinect_tracker src/kinect_tracker.cpp)
+target_link_libraries(kinect_tracker OpenNI2 ${NITE2_LIB} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+
 add_dependencies(
     tracker
     DEPS ${${PROJECT_NAME}_EXPORTED_TARGETS}}
