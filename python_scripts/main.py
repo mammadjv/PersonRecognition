@@ -1,5 +1,5 @@
 import user_tracker as ut
-import FaceDetector as fd
+import face_detector as fd
 import time as time
 import sys
 import cv2
