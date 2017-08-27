@@ -7,10 +7,10 @@ import math
 #         features
 # ---------------------------
 
-Class FeatureCombiner(self, data):
+class FeatureCombiner:
 	# data[0] is list of points for all frames of person "0" 
 	def __init__(self, data):
-        self.data = data
+		self.data = data
 
     # mean_list[0] is list of features mean for person "0"
     # std_list[0] is list of features std for person "0"
@@ -19,17 +19,17 @@ Class FeatureCombiner(self, data):
 		mean_list = []
 		std_list = []
 		for each_data in data:
-			each_mean,each_std = feature_properties(self, each_data)
+			each_mean,each_std = self.feature_properties(each_data)
 			mean_list.append(each_mean)
 			std_list.append(each_std)
 		return mean_list, std_list
 	# -------------------------------------
 	def test_joints(self, points, mean_list, std_list):
 		num_people = len(mean_list)
-		sum_all = sum_people(self,points,mean_list,std_list)
+		sum_all = self.sum_people(points,mean_list,std_list)
 		log_prob_all = []
 		for i in range(num_people):
-			tot = get_person_probability(self,points,mean_list[i],std_list[i])
+			tot = self.get_person_probability(points,mean_list[i],std_list[i])
 			log_prob_all.append(tot - sum_all)
 		max_person = np.argmax(log_prob_all)
 		max_log = np.max(log_prob_all)
@@ -39,13 +39,13 @@ Class FeatureCombiner(self, data):
 		num_people = len(mean_list)
 		sum_all = 0
 		for i in range(num_people):
-			soft_probability = get_feature_person(self,points,mean_list[0],std_list[0])
+			soft_probability = self.get_feature_person(points,mean_list[0],std_list[0])
 			this_probability = np.sum(np.log(soft_probability))
 			sum_all += this_probability
 		return sum_all
 	# -------------------------------------
 	def get_person_probability(self, points, features_mean, features_std):
-		soft_probability = get_feature_person(self,points,features_mean,features_std)
+		soft_probability = self.get_feature_person(points,features_mean,features_std)
 		total_probability = np.sum(np.log(soft_probability))
 		return total_probability
 	# -------------------------------------
@@ -91,12 +91,12 @@ Class FeatureCombiner(self, data):
 	def feature_properties(self, list_points):
 		points_features = []
 		for points in list_points:
-			points_features.append(get_soft_features(points))
+			points_features.append(self.get_soft_features(points))
 		features_mean = np.mean(points_features,axis = 0)
 		features_std = np.std(points_features,axis = 0)
 		return features_mean,features_std
 	# ----------------------------------------------------------------------------------------------------------------------------------
 	def get_feature_person(self, points,features_mean,features_std):
-		features = get_soft_features(points)
+		features = self.get_soft_features(points)
 		probability = (np.exp((-(features - features_mean)**2)/(2*features_std**2)))/(features_std*math.sqrt(2*math.pi))
 		return probability
