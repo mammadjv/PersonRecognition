@@ -1,11 +1,5 @@
 import numpy as np
 import math
-# ---------------------------
-# input: list of 14 points of body
-#        each point is [x,y,z]
-# output: list of 14 soft biometric
-#         features
-# ---------------------------
 
 class FeatureCombiner:
 	# data[0] is list of points for all frames of person "0" 
@@ -24,25 +18,28 @@ class FeatureCombiner:
 			std_list.append(each_std)
 		return mean_list, std_list
 	# -------------------------------------
-	def test_joints(self, points, mean_list, std_list):
+	def test_joints(self, points, mean_list, std_list,face_probabilities):
 		num_people = len(mean_list)
-		sum_all = self.sum_people(points,mean_list,std_list)
+		sum_all = self.sum_people(points,mean_list,std_list,face_probabilities)
 		log_prob_all = []
 		for i in range(num_people):
 			tot = self.get_person_probability(points,mean_list[i],std_list[i])
-			log_prob_all.append(tot - sum_all)
+			log_prob_all.append(tot + np.log(face_probabilities[i]) - sum_all)
 		max_person = np.argmax(log_prob_all)
 		max_log = np.max(log_prob_all)
 		return max_person,max_log
 	# -------------------------------------
-	def sum_people(self,points,mean_list,std_list):
+	def sum_people(self,points,mean_list,std_list, face_probabilities):
 		num_people = len(mean_list)
 		sum_all = 0
 		for i in range(num_people):
-			soft_probability = self.get_feature_person(points,mean_list[0],std_list[0])
-			this_probability = np.sum(np.log(soft_probability))
+			soft_probability = self.get_feature_person(points,mean_list[i],std_list[i])
+			mult = 1
+			for sp in soft_probability:
+				mult *= sp
+			this_probability = mult * face_probabilities[i]
 			sum_all += this_probability
-		return sum_all
+		return np.log(sum_all)
 	# -------------------------------------
 	def get_person_probability(self, points, features_mean, features_std):
 		soft_probability = self.get_feature_person(points,features_mean,features_std)
