@@ -3,7 +3,7 @@
 
   <arg name="tracker_name" default="tracker" />
   
-  <node name="tracker" output="screen" pkg="openni2_tracker" type="tracker" >
+  <node name="tracker" output="screen" pkg="openni_tracker" type="tracker" >
     <param name="tf_prefix" value="$(arg tracker_name)" />
     <param name="relative_frame" value="/$(arg tracker_name)_depth_frame" />
   </node>

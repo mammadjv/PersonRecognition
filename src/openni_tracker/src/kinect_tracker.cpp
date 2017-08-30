@@ -153,12 +153,14 @@ int main(int argc, char** argv){
 
     // Open Device
     openni::Device  devDevice;
+
     if( devDevice.open( openni::ANY_DEVICE ) != openni::STATUS_OK )
     {
         ROS_ERROR("Can't Open Device: \n");
         return -1;
     }
     ROS_INFO("device opened\n");
+
 
     // NITE Stuff
     nite::UserTracker userTracker;
@@ -169,7 +171,6 @@ int main(int argc, char** argv){
         printf("Couldn't create user tracker\n");
         return 3;
     }
-
 
     // Create color stream
     openni::VideoStream vsColorStream;
@@ -219,6 +220,7 @@ int main(int argc, char** argv){
     ros::Rate rate(100.0);
     while (nh.ok()){
         niteRc = userTracker.readFrame(&userTrackerFrame);
+
         if (niteRc != nite::STATUS_OK){
             printf("Get next frame failed\n");
             continue;

@@ -3,6 +3,7 @@ import face_detector as fd
 import time as time
 import sys
 import cv2
+import frame_creator
 
 user_name = '1'
 save_face = False
@@ -28,7 +29,8 @@ while user_tracker.frame_exist():
             # print save_path
             cv2.imwrite(save_path, face)
             cv2.waitKey(1)
-
     # print time.time() - begining_time
-    user_tracker.show_frames()
+    #user_tracker.show_frames()
+    frame = user_tracker.get_current_frame()
+    person  =frame.get_persons()
     begining_time = time.time()

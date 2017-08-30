@@ -60,7 +60,248 @@
 #include <QFile>
 #include <QTextStream>
 
+
+
 using namespace cv;
+
+#define MAX_USERS 10
+bool g_visibleUsers[MAX_USERS] = {false};
+nite::SkeletonState g_skeletonStates[MAX_USERS] = {nite::SKELETON_NONE};
+
+QString dataline = "";
+QString userdata = "";
+
+#define USER_MESSAGE(msg) \
+{printf("[%08llu] User #%d:\t%s\n",ts, user.getId(),msg);}
+
+typedef std::map<std::string, nite::SkeletonJoint> JointMap;
+
+
+
+void updateUserState(const nite::UserData& user, unsigned long long ts){
+    if (user.isNew())
+        USER_MESSAGE("New")
+                else if (user.isVisible() && !g_visibleUsers[user.getId()])
+                USER_MESSAGE("Visible")
+                else if (!user.isVisible() && g_visibleUsers[user.getId()])
+                USER_MESSAGE("Out of Scene")
+                else if (user.isLost())
+                USER_MESSAGE("Lost")
+
+                g_visibleUsers[user.getId()] = user.isVisible();
+
+
+    if(g_skeletonStates[user.getId()] != user.getSkeleton().getState())
+    {
+        switch(g_skeletonStates[user.getId()] = user.getSkeleton().getState())
+        {
+        case nite::SKELETON_NONE:
+            USER_MESSAGE("Stopped tracking.")
+                    break;
+        case nite::SKELETON_CALIBRATING:
+            USER_MESSAGE("Calibrating...")
+                    break;
+        case nite::SKELETON_TRACKED:
+            USER_MESSAGE("Tracking!")
+                    break;
+        case nite::SKELETON_CALIBRATION_ERROR_NOT_IN_POSE:
+        case nite::SKELETON_CALIBRATION_ERROR_HANDS:
+        case nite::SKELETON_CALIBRATION_ERROR_LEGS:
+        case nite::SKELETON_CALIBRATION_ERROR_HEAD:
+        case nite::SKELETON_CALIBRATION_ERROR_TORSO:
+            USER_MESSAGE("Calibration Failed... :-|")
+                    break;
+        }
+    }
+}
+
+
+
+bool publishJointTF(ros::NodeHandle& nh, tf::TransformBroadcaster& br, std::string j_name, nite::SkeletonJoint j, std::string tf_prefix, std::string relative_frame, int uid){
+    if (j.getPositionConfidence() > 0.0){
+        userdata.append(" ");
+        userdata.append(QString::number(j.getPosition().x/1000.0));
+        userdata.append(" ");
+        userdata.append(QString::number(j.getPosition().y/1000.0));
+        userdata.append(" ");
+        userdata.append(QString::number(j.getPosition().z/1000.0));
+        tf::Transform transform;
+        transform.setOrigin(tf::Vector3(j.getPosition().x/1000.0, j.getPosition().y/1000.0, j.getPosition().z/1000.0));
+        transform.setRotation(tf::Quaternion(0, 0, 0, 1));
+        std::stringstream frame_id_stream;
+        std::string frame_id;
+        frame_id_stream << "/" << tf_prefix << "/user_" << uid << "/" << j_name;
+        frame_id = frame_id_stream.str();
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), relative_frame, frame_id));
+    }
+    return true;
+}
+
+
+int main(int argc, char** argv){
+
+    system("touch /home/mohammad/catkin_ws/oniFiles/data_set.txt");
+    QFile data_set("/home/mohammad/catkin_ws/oniFiles/data_set.txt");
+    if(!data_set.open(QIODevice::ReadWrite | QIODevice::Text)){
+        return 0;
+    }
+    QTextStream stream(&data_set);
+
+    VideoWriter *rgbVideoWriter = new VideoWriter("/home/mohammad/catkin_ws/oniFiles/rgb.avi",CV_FOURCC('M','J','P','G'),60,Size(640,480),true);
+    VideoWriter *depthVideoWriter = new VideoWriter("/home/mohammad/catkin_ws/oniFiles/depth.avi",CV_FOURCC('M','J','P','G'),60,Size(640,480),true);
+
+    ros::init(argc, argv, "tracker");
+    ros::NodeHandle nh;
+    ros::NodeHandle pnh("~"); //private node handler
+    std::string tf_prefix, relative_frame = "";
+    tf::TransformBroadcaster br;
+
+    // Get Tracker Parameters
+    if(!pnh.getParam("tf_prefix", tf_prefix)){
+        ROS_ERROR("tf_prefix not found on Param Server! Check your launch file!");
+        return -1;
+    }
+    if(!pnh.getParam("relative_frame", relative_frame)){
+        ROS_ERROR("relative_frame not found on Param Server! Check your launch file!");
+        return -1;
+    }
+
+    openni::Status rc = openni::STATUS_OK;
+    nite::UserTracker *userTracker = new nite::UserTracker();
+
+    rc = openni::OpenNI::initialize();
+    if (rc != openni::STATUS_OK)
+    {
+        printf("Failed to initialize OpenNI\n%s\n", openni::OpenNI::getExtendedError());
+        return 0;
+    }
+
+    const char* deviceUri = openni::ANY_DEVICE;
+
+    openni::Device *m_device = new openni::Device();
+    rc = m_device->open(deviceUri);
+    if (rc != openni::STATUS_OK)
+    {
+        printf("Failed to open device\n%s\n", openni::OpenNI::getExtendedError());
+        return 0;
+    }
+
+    nite::NiTE::initialize();
+
+    if (userTracker->create(m_device) != nite::STATUS_OK)
+    {
+        return openni::STATUS_ERROR;
+    }
+    nite::UserTrackerFrameRef userTrackerFrame;
+
+    openni::VideoStream *videostream = new openni::VideoStream();
+    openni::Status status = videostream->create(*m_device,openni::SENSOR_COLOR);
+
+    if(status != openni::STATUS_OK){
+        return 0;
+    }
+
+    openni::VideoStream *depthstream = new openni::VideoStream();
+    status = depthstream->create(*m_device,openni::SENSOR_DEPTH);
+    if(status != openni::STATUS_OK){
+        return 0;
+    }
+
+    openni::VideoFrameRef g_rgbFrame;
+    videostream->getCameraSettings()->setGain(0);
+    videostream->start();
+
+    int frame_id = 1;
+    while (nh.ok()) {
+        std::cout << videostream->getCameraSettings()->getGain()<<std::endl;
+        userTracker->readFrame(&userTrackerFrame);
+        videostream->readFrame(&g_rgbFrame);
+        const cv::Mat mImageRGB( g_rgbFrame.getHeight(), g_rgbFrame.getWidth(), CV_8UC3, const_cast<void*>(g_rgbFrame.getData()));
+        cv::Mat mImageBGR, mImageDepth;
+        cv::cvtColor(mImageRGB,mImageBGR,CV_BGR2RGB);
+
+        cv::Mat depthImage = cv::Mat( userTrackerFrame.getDepthFrame().getHeight(),
+                                      userTrackerFrame.getDepthFrame().getWidth(),
+                                      CV_16U,
+                                      (char*)userTrackerFrame.getDepthFrame().getData());
+
+        depthImage.convertTo( depthImage, CV_8U, 255.0 / 10000 );
+        cv::cvtColor(depthImage,mImageDepth,CV_GRAY2BGR);
+
+        const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+        int trackd_users=0;
+        for (int i = 0; i < users.getSize(); ++i){
+            const nite::UserData& user = users[i];
+            updateUserState(user,userTrackerFrame.getTimestamp());
+            if (user.isNew()){
+                userTracker->startSkeletonTracking(user.getId());
+            } else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED){
+                JointMap named_joints;
+                named_joints["head"] = (user.getSkeleton().getJoint(nite::JOINT_HEAD) );
+                named_joints["neck"] = (user.getSkeleton().getJoint(nite::JOINT_NECK) );
+                named_joints["left_shoulder"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_SHOULDER) );
+                named_joints["right_shoulder"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_SHOULDER) );
+                named_joints["left_elbow"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_ELBOW) );
+                named_joints["right_elbow"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_ELBOW) );
+                named_joints["left_hand"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_HAND) );
+                named_joints["right_hand"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_HAND) );
+                named_joints["torso"] = (user.getSkeleton().getJoint(nite::JOINT_TORSO) );
+                named_joints["left_hip"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_HIP) );
+                named_joints["right_hip"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_HIP) );
+                named_joints["left_knee"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_KNEE) );
+                named_joints["right_knee"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_KNEE) );
+                named_joints["left_foot"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_FOOT) );
+                named_joints["right_foot"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_FOOT) );
+
+                bool newTrackedUser = false;
+                for (JointMap::iterator it=named_joints.begin(); it!=named_joints.end(); ++it){
+                    nite::SkeletonJoint j = it->second;
+                    if(j.getPositionConfidence() > 0.0){
+                        if(newTrackedUser == false){
+                            userdata.append("id").append(" ").append(QString::number(user.getId()));
+                            newTrackedUser = true;
+                        }
+                        int x = j.getPosition().x;
+                        int y = j.getPosition().y;
+                        int z = j.getPosition().z;
+                        float px , py;
+                        userTracker->convertJointCoordinatesToDepth(x,y,z ,&px,&py);
+                        cv::circle(mImageBGR,cv::Point(px,py),2,cv::Scalar(0,255,0),3,8,0);
+                        std::cout << px  << " @@@  " << py << "\n";
+                        userdata.append(" ");
+                        userdata.append(QString(it->first.data())).append(" ").append(QString::number(int(px)));
+                        userdata.append(" ").append(QString::number(int(py)));
+                    }
+                    publishJointTF(nh,br,it->first,it->second,tf_prefix,relative_frame,user.getId());
+                }
+                if(newTrackedUser == true){
+                    trackd_users++;
+                    userdata.append("\n");
+                }
+            }
+        }
+        if(trackd_users > 0){
+            dataline.append(QString::number(frame_id).append(" ").append(QString::number(trackd_users))).append("\n");
+            dataline.append(userdata);
+            stream << dataline;
+            dataline = "";
+            userdata = "";
+            trackd_users = 0;
+        }
+        cv::imshow("rgb",mImageDepth);
+        rgbVideoWriter->write(mImageBGR);
+        depthVideoWriter->write(mImageDepth);
+        cv::waitKey(1);
+        frame_id++;
+    }
+}
+
+
+
+
+
+
+/*
 
 #define MAX_USERS 10
 bool g_visibleUsers[MAX_USERS] = {false};
@@ -174,12 +415,13 @@ int main(int argc, char** argv){
     if ( ret != openni::STATUS_OK ) {
         std::cout << "##########\n";
     }
-    ret = devDevice.open("/home/mohammad/catkin_ws/oniFiles/Captured2.oni");
+    ret = devDevice.open(openni::ANY_DEVICE);
 
     if ( ret != openni::STATUS_OK ) {
         std::cout << "!!!!!!!!!!!!!!!\n";
+        return 0;
     }
-
+    std::cout << "############!!!!!!!!!!!!!!!\n";
     // NITE Stuff
     nite::Status niteRc;
     nite::NiTE::initialize();
@@ -206,6 +448,7 @@ int main(int argc, char** argv){
 
     nite::UserTracker userTracker;
     nite::UserTrackerFrameRef userTrackerFrame;
+
     // while (!wasKeyboardHit()){
     niteRc = userTracker.create(&devDevice);
 
@@ -220,11 +463,13 @@ int main(int argc, char** argv){
     ros::Rate rate(30.0);
     int frame_id = 1;
     while (nh.ok()){
+        std::cout << "111111111111111111\n";
         niteRc = userTracker.readFrame(&userTrackerFrame);
         if (niteRc != nite::STATUS_OK){
             printf("Get next frame failed\n");
             continue;
         }
+        std::cout << "222222222222\n";
         // get color frame
         openni::VideoFrameRef vfColorFrame;
         cv::Mat mImageBGR;
@@ -289,6 +534,7 @@ int main(int argc, char** argv){
                         int z = j.getPosition().z;
                         float px , py;
                         userTracker.convertJointCoordinatesToDepth(x,y,z ,&py,&px);
+                        cv::circle(mImageBGR,cv::Point(px,py),2,cv::Scalar(255,0,0),1,8,0);
                         userdata.append(" ");
                         userdata.append(QString(it->first.data())).append(" ").append(QString::number(int(px)));
                         userdata.append(" ").append(QString::number(int(py)));
@@ -304,7 +550,7 @@ int main(int argc, char** argv){
         if(trackd_users > 0){
             dataline.append(QString::number(frame_id).append(" ").append(QString::number(trackd_users))).append("\n");
             dataline.append(userdata);
-            stream << dataline;
+//            stream << dataline;
             dataline = "";
             userdata = "";
             trackd_users = 0;
@@ -312,14 +558,14 @@ int main(int argc, char** argv){
         cv::imshow("RGB Camera",mImageBGR);
         cv::imshow( "Depth Camera", mImageDepth);
         frame_id++;
-        rgbVideoWriter->write(mImageBGR);
-        depthVideoWriter->write(mImageDepth);
+//        rgbVideoWriter->write(mImageBGR);
+//        depthVideoWriter->write(mImageDepth);
         cv::waitKey(1);
         rate.sleep();
     }
     nite::NiTE::shutdown();
 }
-
+*/
 /*
 
 xn::Context context;

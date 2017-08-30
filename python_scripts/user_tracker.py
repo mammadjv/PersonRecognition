@@ -10,7 +10,6 @@ class UserTracker:
         self.frame_creator = frame_creator.FrameCreator(datafile)
         self.frame_existence = False
         self.current_frame_id = 1
-        self.users = []
         self.frame_creator.parse()
 
     def frame_exist(self):

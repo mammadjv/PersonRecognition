@@ -2,7 +2,7 @@
 <package>
   <name>openni2_tracker</name>
   <version>0.1.0</version>
-  <description>The openni2-tracker package</description>
+  <description>The openni2_tracker package</description>
 
   <maintainer email="alessio.levratti@unimore.it">alessio</maintainer>
   <license>BSD</license>
