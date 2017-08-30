@@ -266,8 +266,8 @@ int main(int argc, char** argv){
                         int z = j.getPosition().z;
                         float px , py;
                         userTracker->convertJointCoordinatesToDepth(x,y,z ,&px,&py);
-                        cv::circle(mImageBGR,cv::Point(px,py),2,cv::Scalar(0,255,0),3,8,0);
-                        std::cout << px  << " @@@  " << py << "\n";
+//                        cv::circle(mImageBGR,cv::Point(px,py),2,cv::Scalar(0,255,0),3,8,0);
+//                        std::cout << px  << " @@@  " << py << "\n";
                         userdata.append(" ");
                         userdata.append(QString(it->first.data())).append(" ").append(QString::number(int(px)));
                         userdata.append(" ").append(QString::number(int(py)));
@@ -288,7 +288,8 @@ int main(int argc, char** argv){
             userdata = "";
             trackd_users = 0;
         }
-        cv::imshow("rgb",mImageDepth);
+        cv::imshow("rgb",mImageBGR);
+        cv::imshow("depth",mImageDepth);
         rgbVideoWriter->write(mImageBGR);
         depthVideoWriter->write(mImageDepth);
         cv::waitKey(1);
