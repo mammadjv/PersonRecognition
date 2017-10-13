@@ -6,3 +6,4 @@ libfreenect2
 python_scripts/dataset/
 *.pyc
 *.avi
+*.usr
